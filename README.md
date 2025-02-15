@@ -29,4 +29,4 @@ pip install -r requirements.txt
 
 Run the application
 
-gunicorn --reload --workers 4 src.app:app
+gunicorn --reload --workers 4 src.api.app:app
