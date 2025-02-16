@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Candidate Test{% endblock %}
+{% block head %}
+  <script language="javascript">
+    var candidatetest_id = "{{ candidatetest_id }}";
+  </script>
+  {{ super() }}
+{% endblock %}
+{% block content %}
+<h1>It works! {{candidatetest_id }}</h1>
+{% endblock %}
+{% block footer %}
+<small>Candidate test footer</small>
+{% endblock %}

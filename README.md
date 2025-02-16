@@ -27,6 +27,10 @@ Install requirements
 pip install -r requirements.txt
 ```
 
-Run the application
+Run the api
 
-gunicorn --reload --workers 4 src.api.app:app
+gunicorn --reload --workers 4 --bind 0.0.0.0:8081 src.api.app:app
+
+Run the delivery front end
+
+gunicorn --reload --workers 4 --bind 0.0.0.0:8080 src.delivery.app:app
