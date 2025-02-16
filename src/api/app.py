@@ -3,6 +3,8 @@ from flask_restx import Api, Resource, fields, reqparse
 from .objects.mcq_question import MCQQuestionRepository, MCQQuestionNotFoundException
 from .objects.question_collection import QuestionCollectionRepository, QuestionCollectionNotFoundException
 from .objects.fixed_test import FixedTestRepository, FixedTestNotFoundException
+from .objects.candidate import CandidateRepository, CandidateNotFoundException
+from .objects.candidate_test import CandidateTestRepository, CandidateTestNotFoundException
 
 app = Flask(__name__)
 api = Api(app)
@@ -27,9 +29,24 @@ test_model = api.model("FixedTest", {
     "pass_mark": fields.Integer
 })
 
-c_repo = QuestionCollectionRepository()
-c_repo.create("collection 1")
-c_repo.create("collection 2")
+candidate_model = api.model("Candidate", {
+    "candidate_id": fields.Integer,
+    "name": fields.String
+})
+
+candidatetest_model = api.model("CandidateTest", {
+    "candidatetest_id": fields.Integer,
+    "candidate_id": fields.Integer,
+    "test_id": fields.Integer
+})
+
+c_repo = CandidateRepository()
+c_repo.create("Candidate 1")
+c_repo.create("Candidate 2")
+
+qc_repo = QuestionCollectionRepository()
+qc_repo.create("collection 1")
+qc_repo.create("collection 2")
 
 q_repo = MCQQuestionRepository()
 q_repo.create([0], "The answer is a?", ["A", "B", "C", "D"], 0)
@@ -37,6 +54,11 @@ q_repo.create([0,1], "The answer is b?", ["A", "B", "C", "D"], 1)
 
 t_repo = FixedTestRepository()
 t_repo.create("Test 1", [0,1], 1)
+
+ct_repo = CandidateTestRepository()
+ct_repo.create(0, 0)
+ct_repo.create(0, 1)
+ct_repo.create(1, 1)
 
 @api.route("/api/v1/mcqquestions")
 class MCQQuestionsApi(Resource):
@@ -119,7 +141,7 @@ class QuestionCollectionsApi(Resource):
         parser.add_argument("name", type=str, location="json")
         data = parser.parse_args(strict=True)
 
-        return c_repo.create(
+        return qc_repo.create(
             data["name"]
         )
     @api.marshal_with(collection_model)
@@ -127,7 +149,7 @@ class QuestionCollectionsApi(Resource):
         """
         get all collections
         """
-        return c_repo.all()
+        return qc_repo.all()
 
 @api.route("/api/v1/questioncollections/<int:collection_id>")
 class QuestionCollectionsManageApi(Resource):
@@ -137,7 +159,7 @@ class QuestionCollectionsManageApi(Resource):
         get the collection by the id
         """
         try:
-            return c_repo.read(collection_id)
+            return qc_repo.read(collection_id)
         except QuestionCollectionNotFoundException:
             abort(404)
     @api.marshal_with(collection_model)
@@ -150,7 +172,7 @@ class QuestionCollectionsManageApi(Resource):
             parser.add_argument("name", type=str, location="json")
             data = parser.parse_args(strict=True)
 
-            return c_repo.update(
+            return qc_repo.update(
                 collection_id,
                 data["name"]
             )
@@ -161,7 +183,7 @@ class QuestionCollectionsManageApi(Resource):
         Delete the question by the id
         """
         try:
-            c_repo.delete(collection_id)
+            qc_repo.delete(collection_id)
         except QuestionCollectionNotFoundException:
             abort(404)
         return {}
@@ -229,5 +251,126 @@ class FixedTestsManageApi(Resource):
         try:
             t_repo.delete(test_id)
         except FixedTestNotFoundException:
+            abort(404)
+        return {}
+
+@api.route("/api/v1/candidates")
+class CandidatesApi(Resource):
+    @api.marshal_with(candidate_model)
+    def post(self):
+        """
+        create a new candidate
+        """
+        parser = reqparse.RequestParser()
+        parser.add_argument("name", type=str, location="json")
+        data = parser.parse_args(strict=True)
+
+        return c_repo.create(
+            data["name"]
+        )
+    @api.marshal_with(candidate_model)
+    def get(self):
+        """
+        get all candidates
+        """
+        return c_repo.all()
+
+@api.route("/api/v1/candidates/<int:candidate_id>")
+class CandidatesManageApi(Resource):
+    @api.marshal_with(candidate_model)
+    def get(self, candidate_id):
+        """
+        get the candidate by the id
+        """
+        try:
+            return t_repo.read(candidate_id)
+        except CandidateNotFoundException:
+            abort(404)
+    @api.marshal_with(candidate_model)
+    def put(self, candidate_id):
+        """
+        Update the candidate by the id
+        """
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument("name", type=str, location="json")
+            data = parser.parse_args(strict=True)
+
+            return c_repo.update(
+                candidate_id,
+                data["name"]
+            )
+        except CandidateNotFoundException:
+            abort(404)
+    def delete(self, candidate_id):
+        """
+        Delete the candidate by the id
+        """
+        try:
+            c_repo.delete(candidate_id)
+        except CandidateNotFoundException:
+            abort(404)
+        return {}
+
+
+@api.route("/api/v1/candidatetests")
+class CandidateTestsApi(Resource):
+    @api.marshal_with(candidatetest_model)
+    def post(self):
+        """
+        create a new candidate test
+        """
+        parser = reqparse.RequestParser()
+        parser.add_argument("candidate_id", type=int, location="json")
+        parser.add_argument("test_id", type=int, location="json")
+        data = parser.parse_args(strict=True)
+
+        return ct_repo.create(
+            data["candidate_id"],
+            data["test_id"]
+        )
+    @api.marshal_with(candidatetest_model)
+    def get(self):
+        """
+        get all candidate tests
+        """
+        return ct_repo.all()
+
+@api.route("/api/v1/candidatetests/<int:candidatetest_id>")
+class CandidateTestsManageApi(Resource):
+    @api.marshal_with(candidatetest_model)
+    def get(self, candidatetest_id):
+        """
+        get the candidate test by the id
+        """
+        try:
+            return ct_repo.read(candidatetest_id)
+        except CandidateTestNotFoundException:
+            abort(404)
+    @api.marshal_with(candidatetest_model)
+    def put(self, candidatetest_id):
+        """
+        Update the candidate test by the id
+        """
+        try:
+            parser = reqparse.RequestParser()
+            parser.add_argument("candidate_id", type=int, location="json")
+            parser.add_argument("test_id", type=int, location="json")
+            data = parser.parse_args(strict=True)
+
+            return ct_repo.update(
+                candidatetest_id,
+                data["candidate_id"],
+                data["test_id"]
+            )
+        except CandidateTestNotFoundException:
+            abort(404)
+    def delete(self, candidatetest_id):
+        """
+        Delete the candidate test by the id
+        """
+        try:
+            ct_repo.delete(candidatetest_id)
+        except CandidateTestNotFoundException:
             abort(404)
         return {}
